@@ -1,0 +1,25 @@
+# CMake build outputs and downloaded dependencies
+build/
+bin/
+lib/
+
+# IDE / Editor configuration
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.sln
+*.vcxproj*
+
+# Compiler metadata & temporary caches
+compile_commands.json
+*.o
+*.obj
+*.spv
+*.log
+.cache/
+
+# OS artifacts
+Thumbs.db
+[Dd]esktop.ini
+.DS_Store

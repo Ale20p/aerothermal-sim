@@ -45,11 +45,76 @@ FetchContent_Declare(
 )
 
 # GLM (Header-Only Math)
-FetchContent(
+FetchContent_Declare(
     glm
     GIT_REPOSITORY https://github.com/g-truc/glm.git
     GIT_TAG 1.0.1
 )
 
 # Vulkan Memory Allocator
+FetchContent_Declare(
+    vma
+    GIT_REPOSITORY https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+    GIT_TAG v3.1.0
+)
+FetchContent_MakeAvailable(glfw glm vma)
 
+# Executable Target
+file(GLOB_RECURSE SRC_FILES
+    CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h
+)
+
+add_executable(${PROJECT_NAME} ${SRC_FILES})
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    project_warnings
+    Vulkan::Vulkan
+    Vulkan::Headers
+    glfw
+    glm::glm
+    VulkanMemoryAllocator
+)
+
+# Shader Compilation Pipeline
+set(SPV_OUTPUT_DIR "${CMAKE_BINARY_DIR}/shaders")
+file(MAKE_DIRECTORY ${SPV_OUTPUT_DIR})
+
+set(SHADER_SOURCES
+    shaders/compute/spatial_hash.comp
+    shaders/compute/sph_density.comp
+    shaders/compute/sph_forces.comp
+    shaders/compute/thermal_advection.comp
+    shaders/graphics/particle.vert
+    shaders/graphics/particle.frag
+    shaders/graphics/cad_mesh.vert
+    shaders/graphics/cad_mesh.frag
+)
+
+set(SPV_OUTPUTS "")
+foreach(SHADER ${SHADER_SOURCES})
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${SHADER}")
+        get_filename_component(SHADER_NAME %{SHADER} NAME)
+        set(SPV_FILE "${SPV_OUTPUT_DIR}/${SHADER_NAME}.spv")
+
+        add_custom_command(
+            OUTPUT ${SPV_FILE}
+            COMMAND Vulkan::glslc --target-env=vulkan1.3 -0 "${CMAKE_CURRENT_SOURCE_DIR}/${SHADER}" -o "${SPV_FILE}"
+            DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${SHADER}"
+            COMMENT "Compiling ${SHADER} -> ${SHADER_NAME}.spv"
+            VERBATIM
+        )
+        list(APPEND SPV_OUTPUTS ${SPV_FILE})
+    endif()
+endforeach()
+
+if(SPV_OUTPUTS)
+    add_custom_target(compile_shaders ALL DEPENDS ${SPV_OUTPUTS})
+    add_dependencies(${PROJECT_NAME} compile_shaders)
+endif()
