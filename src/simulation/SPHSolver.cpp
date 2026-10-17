@@ -1,6 +1,18 @@
 #include "SPHSolver.hpp"
 
 namespace sim {
+    void SPHSolver::createParticleBuffer(VmaAllocator allocator, VkDevice device, VkQueue queue, VkCommandPool pool, const std::vector<Particle>& initialData) {
+        VkDeviceSize bufferSize = sizeof(Particle) * initialData.size();
+
+        // Create Host-Visible Staging Buffer
+        VkBuffer stagingBuffer = VK_NULL_HANDLE;
+        VmaAllocator stagingAlloc = VK_NULL_HANDLE;
+
+        VkBufferCreateInfo stagingBufferInfo{
+            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        }
+    }
+
     void SPHSolver::init(VkDevice device) {
         // 1. Descriptor Set Layout for the Particle SSBO
         VkDescriptorSetLayoutBinding ssboBinding {
